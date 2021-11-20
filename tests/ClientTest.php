@@ -274,7 +274,7 @@ class ClientTest extends TestCase
 
     public function testAddsAcceptEncodingbyCurl()
     {
-        $client = new Client(['curl' => [\CURLOPT_ENCODING => '']]);
+        $client = new Client(['curl' => [CURLOPT_ENCODING => '']]);
 
         Server::flush();
         Server::enqueue([new Response()]);
@@ -284,7 +284,7 @@ class ClientTest extends TestCase
 
         $mock = new MockHandler([new Response()]);
         $client->get('http://foo.com', ['handler' => $mock]);
-        self::assertSame([\CURLOPT_ENCODING => ''], $mock->getLastOptions()['curl']);
+        self::assertSame([CURLOPT_ENCODING => ''], $mock->getLastOptions()['curl']);
     }
 
     public function testValidatesHeaders()
@@ -398,8 +398,8 @@ class ClientTest extends TestCase
         $client->get('http://foo.com', ['auth' => ['a', 'b', 'digest']]);
         $last = $mock->getLastOptions();
         self::assertSame([
-            \CURLOPT_HTTPAUTH => 2,
-            \CURLOPT_USERPWD  => 'a:b'
+            CURLOPT_HTTPAUTH => 2,
+            CURLOPT_USERPWD  => 'a:b'
         ], $last['curl']);
     }
 
@@ -410,8 +410,8 @@ class ClientTest extends TestCase
         $client->get('http://foo.com', ['auth' => ['a', 'b', 'ntlm']]);
         $last = $mock->getLastOptions();
         self::assertSame([
-            \CURLOPT_HTTPAUTH => 8,
-            \CURLOPT_USERPWD  => 'a:b'
+            CURLOPT_HTTPAUTH => 8,
+            CURLOPT_USERPWD  => 'a:b'
         ], $last['curl']);
     }
 
