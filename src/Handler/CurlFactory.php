@@ -65,7 +65,7 @@ class CurlFactory implements CurlFactoryInterface
             $conf = \array_replace($conf, $options['curl']);
         }
 
-        $conf[\CURLOPT_HEADERFUNCTION] = $this->createHeaderFn($easy);
+        $conf[CURLOPT_HEADERFUNCTION] = $this->createHeaderFn($easy);
         $easy->handle = $this->handles ? \array_pop($this->handles) : \curl_init();
         curl_setopt_array($easy->handle, $conf);
 
@@ -84,10 +84,10 @@ class CurlFactory implements CurlFactoryInterface
             // and are not cleaned up by curl_reset. Using curl_setopt_array
             // does not work for some reason, so removing each one
             // individually.
-            \curl_setopt($resource, \CURLOPT_HEADERFUNCTION, null);
-            \curl_setopt($resource, \CURLOPT_READFUNCTION, null);
-            \curl_setopt($resource, \CURLOPT_WRITEFUNCTION, null);
-            \curl_setopt($resource, \CURLOPT_PROGRESSFUNCTION, null);
+            \curl_setopt($resource, CURLOPT_HEADERFUNCTION, null);
+            \curl_setopt($resource, CURLOPT_READFUNCTION, null);
+            \curl_setopt($resource, CURLOPT_WRITEFUNCTION, null);
+            \curl_setopt($resource, CURLOPT_PROGRESSFUNCTION, null);
             \curl_reset($resource);
             $this->handles[] = $resource;
         }
@@ -125,7 +125,7 @@ class CurlFactory implements CurlFactoryInterface
     private static function invokeStats(EasyHandle $easy): void
     {
         $curlStats = \curl_getinfo($easy->handle);
-        $curlStats['appconnect_time'] = \curl_getinfo($easy->handle, \CURLINFO_APPCONNECT_TIME);
+        $curlStats['appconnect_time'] = \curl_getinfo($easy->handle, CURLINFO_APPCONNECT_TIME);
         $stats = new TransferStats(
             $easy->request,
             $easy->response,
@@ -145,7 +145,7 @@ class CurlFactory implements CurlFactoryInterface
         $ctx = [
             'errno' => $easy->errno,
             'error' => \curl_error($easy->handle),
-            'appconnect_time' => \curl_getinfo($easy->handle, \CURLINFO_APPCONNECT_TIME),
+            'appconnect_time' => \curl_getinfo($easy->handle, CURLINFO_APPCONNECT_TIME),
         ] + \curl_getinfo($easy->handle);
         $ctx[self::CURL_VERSION_STR] = \curl_version()['version'];
         $factory->release($easy);
@@ -161,11 +161,11 @@ class CurlFactory implements CurlFactoryInterface
     private static function createRejection(EasyHandle $easy, array $ctx): PromiseInterface
     {
         static $connectionErrors = [
-            \CURLE_OPERATION_TIMEOUTED  => true,
-            \CURLE_COULDNT_RESOLVE_HOST => true,
-            \CURLE_COULDNT_CONNECT      => true,
-            \CURLE_SSL_CONNECT_ERROR    => true,
-            \CURLE_GOT_NOTHING          => true,
+            CURLE_OPERATION_TIMEOUTED  => true,
+            CURLE_COULDNT_RESOLVE_HOST => true,
+            CURLE_COULDNT_CONNECT      => true,
+            CURLE_SSL_CONNECT_ERROR    => true,
+            CURLE_GOT_NOTHING          => true,
         ];
 
         if ($easy->createResponseException) {
@@ -220,24 +220,24 @@ class CurlFactory implements CurlFactoryInterface
     {
         $conf = [
             '_headers'              => $easy->request->getHeaders(),
-            \CURLOPT_CUSTOMREQUEST  => $easy->request->getMethod(),
-            \CURLOPT_URL            => (string) $easy->request->getUri()->withFragment(''),
-            \CURLOPT_RETURNTRANSFER => false,
-            \CURLOPT_HEADER         => false,
-            \CURLOPT_CONNECTTIMEOUT => 150,
+            CURLOPT_CUSTOMREQUEST  => $easy->request->getMethod(),
+            CURLOPT_URL            => (string) $easy->request->getUri()->withFragment(''),
+            CURLOPT_RETURNTRANSFER => false,
+            CURLOPT_HEADER         => false,
+            CURLOPT_CONNECTTIMEOUT => 150,
         ];
 
         if (\defined('CURLOPT_PROTOCOLS')) {
-            $conf[\CURLOPT_PROTOCOLS] = \CURLPROTO_HTTP | \CURLPROTO_HTTPS;
+            $conf[CURLOPT_PROTOCOLS] = CURLPROTO_HTTP | CURLPROTO_HTTPS;
         }
 
         $version = $easy->request->getProtocolVersion();
         if ($version == 1.1) {
-            $conf[\CURLOPT_HTTP_VERSION] = \CURL_HTTP_VERSION_1_1;
+            $conf[CURLOPT_HTTP_VERSION] = CURL_HTTP_VERSION_1_1;
         } elseif ($version == 2.0) {
-            $conf[\CURLOPT_HTTP_VERSION] = \CURL_HTTP_VERSION_2_0;
+            $conf[CURLOPT_HTTP_VERSION] = CURL_HTTP_VERSION_2_0;
         } else {
-            $conf[\CURLOPT_HTTP_VERSION] = \CURL_HTTP_VERSION_1_0;
+            $conf[CURLOPT_HTTP_VERSION] = CURL_HTTP_VERSION_1_0;
         }
 
         return $conf;
@@ -257,15 +257,15 @@ class CurlFactory implements CurlFactoryInterface
         if ($method === 'PUT' || $method === 'POST') {
             // See https://tools.ietf.org/html/rfc7230#section-3.3.2
             if (!$easy->request->hasHeader('Content-Length')) {
-                $conf[\CURLOPT_HTTPHEADER][] = 'Content-Length: 0';
+                $conf[CURLOPT_HTTPHEADER][] = 'Content-Length: 0';
             }
         } elseif ($method === 'HEAD') {
-            $conf[\CURLOPT_NOBODY] = true;
+            $conf[CURLOPT_NOBODY] = true;
             unset(
-                $conf[\CURLOPT_WRITEFUNCTION],
-                $conf[\CURLOPT_READFUNCTION],
-                $conf[\CURLOPT_FILE],
-                $conf[\CURLOPT_INFILE]
+                $conf[CURLOPT_WRITEFUNCTION],
+                $conf[CURLOPT_READFUNCTION],
+                $conf[CURLOPT_FILE],
+                $conf[CURLOPT_INFILE]
             );
         }
     }
@@ -279,33 +279,33 @@ class CurlFactory implements CurlFactoryInterface
         // Send the body as a string if the size is less than 1MB OR if the
         // [curl][body_as_string] request value is set.
         if (($size !== null && $size < 1000000) || !empty($options['_body_as_string'])) {
-            $conf[\CURLOPT_POSTFIELDS] = (string) $request->getBody();
+            $conf[CURLOPT_POSTFIELDS] = (string) $request->getBody();
             // Don't duplicate the Content-Length header
             $this->removeHeader('Content-Length', $conf);
             $this->removeHeader('Transfer-Encoding', $conf);
         } else {
-            $conf[\CURLOPT_UPLOAD] = true;
+            $conf[CURLOPT_UPLOAD] = true;
             if ($size !== null) {
-                $conf[\CURLOPT_INFILESIZE] = $size;
+                $conf[CURLOPT_INFILESIZE] = $size;
                 $this->removeHeader('Content-Length', $conf);
             }
             $body = $request->getBody();
             if ($body->isSeekable()) {
                 $body->rewind();
             }
-            $conf[\CURLOPT_READFUNCTION] = static function ($ch, $fd, $length) use ($body) {
+            $conf[CURLOPT_READFUNCTION] = static function ($ch, $fd, $length) use ($body) {
                 return $body->read($length);
             };
         }
 
         // If the Expect header is not present, prevent curl from adding it
         if (!$request->hasHeader('Expect')) {
-            $conf[\CURLOPT_HTTPHEADER][] = 'Expect:';
+            $conf[CURLOPT_HTTPHEADER][] = 'Expect:';
         }
 
         // cURL sometimes adds a content-type by default. Prevent this.
         if (!$request->hasHeader('Content-Type')) {
-            $conf[\CURLOPT_HTTPHEADER][] = 'Content-Type:';
+            $conf[CURLOPT_HTTPHEADER][] = 'Content-Type:';
         }
     }
 
@@ -317,16 +317,16 @@ class CurlFactory implements CurlFactoryInterface
                 if ($value === '') {
                     // cURL requires a special format for empty headers.
                     // See https://github.com/guzzle/guzzle/issues/1882 for more details.
-                    $conf[\CURLOPT_HTTPHEADER][] = "$name;";
+                    $conf[CURLOPT_HTTPHEADER][] = "$name;";
                 } else {
-                    $conf[\CURLOPT_HTTPHEADER][] = "$name: $value";
+                    $conf[CURLOPT_HTTPHEADER][] = "$name: $value";
                 }
             }
         }
 
         // Remove the Accept header if one was not set
         if (!$easy->request->hasHeader('Accept')) {
-            $conf[\CURLOPT_HTTPHEADER][] = 'Accept:';
+            $conf[CURLOPT_HTTPHEADER][] = 'Accept:';
         }
     }
 
@@ -351,12 +351,12 @@ class CurlFactory implements CurlFactoryInterface
         $options = $easy->options;
         if (isset($options['verify'])) {
             if ($options['verify'] === false) {
-                unset($conf[\CURLOPT_CAINFO]);
-                $conf[\CURLOPT_SSL_VERIFYHOST] = 0;
-                $conf[\CURLOPT_SSL_VERIFYPEER] = false;
+                unset($conf[CURLOPT_CAINFO]);
+                $conf[CURLOPT_SSL_VERIFYHOST] = 0;
+                $conf[CURLOPT_SSL_VERIFYPEER] = false;
             } else {
-                $conf[\CURLOPT_SSL_VERIFYHOST] = 2;
-                $conf[\CURLOPT_SSL_VERIFYPEER] = true;
+                $conf[CURLOPT_SSL_VERIFYHOST] = 2;
+                $conf[CURLOPT_SSL_VERIFYPEER] = true;
                 if (\is_string($options['verify'])) {
                     // Throw an error if the file/folder/link path is not valid or doesn't exist.
                     if (!\file_exists($options['verify'])) {
@@ -372,25 +372,25 @@ class CurlFactory implements CurlFactoryInterface
                             \is_dir($verifyLink)
                         )
                     ) {
-                        $conf[\CURLOPT_CAPATH] = $options['verify'];
+                        $conf[CURLOPT_CAPATH] = $options['verify'];
                     } else {
-                        $conf[\CURLOPT_CAINFO] = $options['verify'];
+                        $conf[CURLOPT_CAINFO] = $options['verify'];
                     }
                 }
             }
         }
 
-        if (!isset($options['curl'][\CURLOPT_ENCODING]) && !empty($options['decode_content'])) {
+        if (!isset($options['curl'][CURLOPT_ENCODING]) && !empty($options['decode_content'])) {
             $accept = $easy->request->getHeaderLine('Accept-Encoding');
             if ($accept) {
-                $conf[\CURLOPT_ENCODING] = $accept;
+                $conf[CURLOPT_ENCODING] = $accept;
             } else {
                 // The empty string enables all available decoders and implicitly
                 // sets a matching 'Accept-Encoding' header.
-                $conf[\CURLOPT_ENCODING] = '';
+                $conf[CURLOPT_ENCODING] = '';
                 // But as the user did not specify any acceptable encodings we need
                 // to overwrite this implicit header with an empty one.
-                $conf[\CURLOPT_HTTPHEADER][] = 'Accept-Encoding:';
+                $conf[CURLOPT_HTTPHEADER][] = 'Accept-Encoding:';
             }
         }
 
@@ -408,43 +408,43 @@ class CurlFactory implements CurlFactoryInterface
             $sink = new LazyOpenStream($sink, 'w+');
         }
         $easy->sink = $sink;
-        $conf[\CURLOPT_WRITEFUNCTION] = static function ($ch, $write) use ($sink): int {
+        $conf[CURLOPT_WRITEFUNCTION] = static function ($ch, $write) use ($sink): int {
             return $sink->write($write);
         };
 
         $timeoutRequiresNoSignal = false;
         if (isset($options['timeout'])) {
             $timeoutRequiresNoSignal |= $options['timeout'] < 1;
-            $conf[\CURLOPT_TIMEOUT_MS] = $options['timeout'] * 1000;
+            $conf[CURLOPT_TIMEOUT_MS] = $options['timeout'] * 1000;
         }
 
         // CURL default value is CURL_IPRESOLVE_WHATEVER
         if (isset($options['force_ip_resolve'])) {
             if ('v4' === $options['force_ip_resolve']) {
-                $conf[\CURLOPT_IPRESOLVE] = \CURL_IPRESOLVE_V4;
+                $conf[CURLOPT_IPRESOLVE] = CURL_IPRESOLVE_V4;
             } elseif ('v6' === $options['force_ip_resolve']) {
-                $conf[\CURLOPT_IPRESOLVE] = \CURL_IPRESOLVE_V6;
+                $conf[CURLOPT_IPRESOLVE] = CURL_IPRESOLVE_V6;
             }
         }
 
         if (isset($options['connect_timeout'])) {
             $timeoutRequiresNoSignal |= $options['connect_timeout'] < 1;
-            $conf[\CURLOPT_CONNECTTIMEOUT_MS] = $options['connect_timeout'] * 1000;
+            $conf[CURLOPT_CONNECTTIMEOUT_MS] = $options['connect_timeout'] * 1000;
         }
 
         if ($timeoutRequiresNoSignal && \strtoupper(\substr(\PHP_OS, 0, 3)) !== 'WIN') {
-            $conf[\CURLOPT_NOSIGNAL] = true;
+            $conf[CURLOPT_NOSIGNAL] = true;
         }
 
         if (isset($options['proxy'])) {
             if (!\is_array($options['proxy'])) {
-                $conf[\CURLOPT_PROXY] = $options['proxy'];
+                $conf[CURLOPT_PROXY] = $options['proxy'];
             } else {
                 $scheme = $easy->request->getUri()->getScheme();
                 if (isset($options['proxy'][$scheme])) {
                     $host = $easy->request->getUri()->getHost();
                     if (!isset($options['proxy']['no']) || !Utils::isHostInNoProxy($host, $options['proxy']['no'])) {
-                        $conf[\CURLOPT_PROXY] = $options['proxy'][$scheme];
+                        $conf[CURLOPT_PROXY] = $options['proxy'][$scheme];
                     }
                 }
             }
@@ -453,7 +453,7 @@ class CurlFactory implements CurlFactoryInterface
         if (isset($options['cert'])) {
             $cert = $options['cert'];
             if (\is_array($cert)) {
-                $conf[\CURLOPT_SSLCERTPASSWD] = $cert[1];
+                $conf[CURLOPT_SSLCERTPASSWD] = $cert[1];
                 $cert = $cert[0];
             }
             if (!\file_exists($cert)) {
@@ -463,15 +463,15 @@ class CurlFactory implements CurlFactoryInterface
             # see https://curl.se/libcurl/c/CURLOPT_SSLCERTTYPE.html
             $ext = pathinfo($cert, \PATHINFO_EXTENSION);
             if (preg_match('#^(der|p12)$#i', $ext)) {
-                $conf[\CURLOPT_SSLCERTTYPE] = strtoupper($ext);
+                $conf[CURLOPT_SSLCERTTYPE] = strtoupper($ext);
             }
-            $conf[\CURLOPT_SSLCERT] = $cert;
+            $conf[CURLOPT_SSLCERT] = $cert;
         }
 
         if (isset($options['ssl_key'])) {
             if (\is_array($options['ssl_key'])) {
                 if (\count($options['ssl_key']) === 2) {
-                    [$sslKey, $conf[\CURLOPT_SSLKEYPASSWD]] = $options['ssl_key'];
+                    [$sslKey, $conf[CURLOPT_SSLKEYPASSWD]] = $options['ssl_key'];
                 } else {
                     [$sslKey] = $options['ssl_key'];
                 }
@@ -482,7 +482,7 @@ class CurlFactory implements CurlFactoryInterface
             if (!\file_exists($sslKey)) {
                 throw new \InvalidArgumentException("SSL private key not found: {$sslKey}");
             }
-            $conf[\CURLOPT_SSLKEY] = $sslKey;
+            $conf[CURLOPT_SSLKEY] = $sslKey;
         }
 
         if (isset($options['progress'])) {
@@ -490,15 +490,15 @@ class CurlFactory implements CurlFactoryInterface
             if (!\is_callable($progress)) {
                 throw new \InvalidArgumentException('progress client option must be callable');
             }
-            $conf[\CURLOPT_NOPROGRESS] = false;
-            $conf[\CURLOPT_PROGRESSFUNCTION] = static function ($resource, int $downloadSize, int $downloaded, int $uploadSize, int $uploaded) use ($progress) {
+            $conf[CURLOPT_NOPROGRESS] = false;
+            $conf[CURLOPT_PROGRESSFUNCTION] = static function ($resource, int $downloadSize, int $downloaded, int $uploadSize, int $uploaded) use ($progress) {
                 $progress($downloadSize, $downloaded, $uploadSize, $uploaded);
             };
         }
 
         if (!empty($options['debug'])) {
-            $conf[\CURLOPT_STDERR] = Utils::debugResource($options['debug']);
-            $conf[\CURLOPT_VERBOSE] = true;
+            $conf[CURLOPT_STDERR] = Utils::debugResource($options['debug']);
+            $conf[CURLOPT_VERBOSE] = true;
         }
     }
 
